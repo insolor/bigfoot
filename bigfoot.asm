@@ -136,9 +136,9 @@ library kernel32,'KERNEL32.DLL',\
   gdi32,'GDI32.DLL',\
   msvcrt,'MSVCRT.DLL'
 
-include 'apia\kernel32.inc'
-include 'apia\user32.inc'
-include 'apia\gdi32.inc'
+include 'api\kernel32.inc'
+include 'api\user32.inc'
+include 'api\gdi32.inc'
 
 import msvcrt, rand, 'rand'
 
