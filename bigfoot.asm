@@ -3,7 +3,9 @@ entry WinMain
 
 include 'win32ax.inc'
 
-BitmapId equ 123
+BitmapId = 123
+step.width = 40
+step.height = 50
 
 section '.data' data readable writeable
     skip        dd 100
@@ -82,7 +84,8 @@ endl
     add     eax, 20
     mov     edx, 40
 @@:
-    invoke  BitBlt, ebx, eax, ecx, 40, 50, [hMemDC], edx, 0, SRCINVERT
+    ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
+    invoke  BitBlt, ebx, eax, ecx, step.width, step.height, [hMemDC], edx, 0, SRCINVERT
     invoke  ReleaseDC, 0, ebx
     mov     edx, [Y]
     test    edx, edx
@@ -108,7 +111,8 @@ endl
     add     eax, 20
     mov     edx, 40
 @@:
-    invoke  BitBlt, [hScreenDC], eax, ecx, 40, 50, [hMemDC], edx, 0, SRCINVERT
+    ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
+    invoke  BitBlt, [hScreenDC], eax, ecx, step.width, step.height, [hMemDC], edx, 0, SRCINVERT
 .erase:
     mov     ecx, [Y]
     test    ecx, ecx
