@@ -38,13 +38,12 @@ proc DrawErase
     retn
 endp
 
-proc WinMain uses ebx
+proc WinMain
 locals
     Msg         MSG
     screen.height dd ?
     screen.width  dd ?
     hStep       dd ?
-
 endl
     invoke  GetSystemMetrics, SM_CXSCREEN
     mov     [screen.width], eax
@@ -61,18 +60,20 @@ endl
     invoke  SelectObject, eax, [hStep]
     pop eax
     invoke  ReleaseDC, HWND_DESKTOP, eax
-    jmp     .get_message
 ; ---------------------------------------------------------------------------
-
 .message_loop:
+    invoke  GetMessage, addr Msg, HWND_DESKTOP, 0, 0
+    test    eax, eax
+    jz .leave
+    
     mov     eax, [Msg.message]
     cmp     eax, WM_TIMER
-    jnz     .get_message
+    jnz     .message_loop
     mov     edx, [skip]
     test    edx, edx
     jz      @f
     dec     [skip]
-    jmp     .get_message
+    jmp     .message_loop
 ; ---------------------------------------------------------------------------
 
 @@:
@@ -98,7 +99,7 @@ endl
     invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
     mov     ecx, [Y]
     test    ecx, ecx
-    jge     .get_message
+    jge     .message_loop
 ; erase
     mov     ecx, [screen.height]
     mov     [Y], ecx
@@ -116,12 +117,9 @@ endl
     xor     eax, eax
     mov     [flag], eax
     mov     [skip], 100
+    jmp     .message_loop
 
-.get_message:
-    invoke  GetMessage, addr Msg, HWND_DESKTOP, 0, 0
-    test    eax, eax
-    jnz     .message_loop
-    
+.leave:
     invoke  KillTimer, HWND_DESKTOP, 1
     invoke  DeleteDC, [hMemDC]
     invoke  DeleteObject, [hStep]
