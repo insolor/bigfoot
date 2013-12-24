@@ -6,9 +6,10 @@ include 'win32ax.inc'
 BitmapId = 123
 step.width = 40
 step.height = 50
+skip.initial = 100
 
 section '.data' data readable writeable
-    skip        dd 100
+    skip        dd skip.initial
     flag        dd 0
     X           dd ?
     Y           dd ?
@@ -31,7 +32,7 @@ proc DrawErase
     jmp @f
 .right:
     add     eax, 20
-    mov     edx, 40
+    mov     edx, step.width
 @@:
     ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
     invoke  BitBlt, [hScreenDC], eax, ecx, step.width, step.height, [hMemDC], edx, 0, SRCINVERT
@@ -54,17 +55,17 @@ endl
     mov     [hStep], eax
     invoke  SetTimer, HWND_DESKTOP, 1, 500, NULL
     invoke  GetDC, HWND_DESKTOP
-    push eax
+    push    eax
     invoke  CreateCompatibleDC, eax
     mov     [hMemDC], eax
     invoke  SelectObject, eax, [hStep]
-    pop eax
+    pop     eax
     invoke  ReleaseDC, HWND_DESKTOP, eax
 ; ---------------------------------------------------------------------------
 .message_loop:
     invoke  GetMessage, addr Msg, HWND_DESKTOP, 0, 0
     test    eax, eax
-    jz .leave
+    jz      .leave
     
     mov     eax, [Msg.message]
     cmp     eax, WM_TIMER
@@ -87,9 +88,9 @@ endl
     invoke  rand
     cdq ; расширить бит знака eax на edx
     mov     ecx, [screen.width]
-    sub     ecx, 100
+    sub     ecx, (step.width+10)*2
     idiv    ecx ; делим edx:eax на ecx с учетом знака
-    add     edx, 50
+    add     edx, step.width+10
     mov     [X], edx
 ; }
     mov     [flag], 1
@@ -116,7 +117,7 @@ endl
     invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
     xor     eax, eax
     mov     [flag], eax
-    mov     [skip], 100
+    mov     [skip], skip.initial
     jmp     .message_loop
 
 .leave:
