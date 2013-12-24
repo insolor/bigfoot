@@ -7,6 +7,8 @@ BitmapId = 123
 step.width = 40
 step.height = 50
 
+CAPTUREBLT = 40000000h
+
 section '.data' data readable writeable
     skip        dd 100
     flag        dd 0
@@ -21,6 +23,7 @@ locals
     hStep       dd ?
     X           dd ?
     Y           dd ?
+    hwndDesktop    dd ?
     hScreenDC   dd ?
     hMemDC      dd ?
 endl
@@ -31,13 +34,15 @@ endl
     invoke  GetModuleHandle, 0
     invoke  LoadBitmap, eax, BitmapId
     mov     [hStep], eax
-    invoke  SetTimer, HWND_DESKTOP, 1, 500, NULL
-    invoke  GetDC, HWND_DESKTOP
+    invoke  GetDesktopWindow
+    mov     [hwndDesktop], eax
+    invoke  SetTimer, eax, 1, 500, NULL
+    invoke  GetDC, [hwndDesktop]
     mov     ebx, eax
     invoke  CreateCompatibleDC, eax
     mov     [hMemDC], eax
     invoke  SelectObject, eax, [hStep]
-    invoke  ReleaseDC, HWND_DESKTOP, ebx
+    invoke  ReleaseDC, [hwndDesktop], ebx
     jmp     .get_message
 ; ---------------------------------------------------------------------------
 
@@ -70,7 +75,7 @@ endl
     mov     [flag], 1
 @@:
     sub     [Y], 85
-    invoke  GetDC, HWND_DESKTOP
+    invoke  GetDC, [hwndDesktop]
     mov     ebx, eax
     mov     ecx, [Y]
     test    ecx, 1
@@ -86,14 +91,14 @@ endl
 @@:
     ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
     invoke  BitBlt, ebx, eax, ecx, step.width, step.height, [hMemDC], edx, 0, SRCINVERT
-    invoke  ReleaseDC, 0, ebx
+    invoke  ReleaseDC, [hwndDesktop], ebx
     mov     edx, [Y]
     test    edx, edx
     jge     .get_message
 ; erase
     mov     ecx, [screen.height]
     mov     [Y], ecx
-    invoke  GetDC, HWND_DESKTOP
+    invoke  GetDC, [hwndDesktop]
     mov     [hScreenDC], eax
     jmp     .erase
 
@@ -117,16 +122,16 @@ endl
     mov     ecx, [Y]
     test    ecx, ecx
     jg      .erase_loop
-    invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
+    invoke  ReleaseDC, [hwndDesktop], [hScreenDC]
     xor     eax, eax
     mov     [flag], eax
     mov     [skip], 100
 
 .get_message:
-    invoke  GetMessage, addr Msg, 0, 0, 0
+    invoke  GetMessage, addr Msg, [hwndDesktop], 0, 0
     test    eax, eax
     jnz     .message_loop
-    invoke  KillTimer, HWND_DESKTOP, 1
+    invoke  KillTimer, [hwndDesktop], 1
     invoke  DeleteDC, [hMemDC]
     invoke  DeleteObject, [hStep]
     mov     eax, [Msg.wParam]
