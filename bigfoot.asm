@@ -79,6 +79,7 @@ endl
     mov     ecx, [flag]
     test    ecx, ecx
     jnz     @f
+; first step
     mov     eax, [screen.height]
     mov     [Y], eax
 ; X = rand%(screen.width-100)+50 {
@@ -91,13 +92,12 @@ endl
     mov     [X], edx
 ; }
     mov     [flag], 1
-; ------------------------------
+
 @@:
     call    DrawErase
-; ------------------------------
     invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
-    mov     edx, [Y]
-    test    edx, edx
+    mov     ecx, [Y]
+    test    ecx, ecx
     jge     .get_message
 ; erase
     mov     ecx, [screen.height]
@@ -111,7 +111,7 @@ endl
 .erase:
     mov     ecx, [Y]
     test    ecx, ecx
-    jg      .erase_loop
+    jge     .erase_loop
     invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
     xor     eax, eax
     mov     [flag], eax
@@ -121,6 +121,7 @@ endl
     invoke  GetMessage, addr Msg, HWND_DESKTOP, 0, 0
     test    eax, eax
     jnz     .message_loop
+    
     invoke  KillTimer, HWND_DESKTOP, 1
     invoke  DeleteDC, [hMemDC]
     invoke  DeleteObject, [hStep]
