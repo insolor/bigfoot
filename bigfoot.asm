@@ -86,7 +86,7 @@ endl
 @@:
     ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
     invoke  BitBlt, ebx, eax, ecx, step.width, step.height, [hMemDC], edx, 0, SRCINVERT
-    invoke  ReleaseDC, 0, ebx
+    invoke  ReleaseDC, HWND_DESKTOP, ebx
     mov     edx, [Y]
     test    edx, edx
     jge     .get_message
@@ -123,7 +123,7 @@ endl
     mov     [skip], 100
 
 .get_message:
-    invoke  GetMessage, addr Msg, 0, 0, 0
+    invoke  GetMessage, addr Msg, HWND_DESKTOP, 0, 0
     test    eax, eax
     jnz     .message_loop
     invoke  KillTimer, HWND_DESKTOP, 1
