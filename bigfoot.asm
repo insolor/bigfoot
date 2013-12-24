@@ -10,8 +10,33 @@ step.height = 50
 section '.data' data readable writeable
     skip        dd 100
     flag        dd 0
+    X           dd ?
+    Y           dd ?
+    hScreenDC   dd ?
+    hMemDC      dd ?
 
 section '.text' code readable executable
+
+proc DrawErase
+    sub     [Y], 85
+    invoke  GetDC, HWND_DESKTOP
+    mov     [hScreenDC], eax
+    mov     ecx, [Y]
+    test    ecx, 1
+    mov     eax, [X]
+    jnz     .right
+.left:
+    sub     eax, 20
+    xor     edx, edx
+    jmp @f
+.right:
+    add     eax, 20
+    mov     edx, 40
+@@:
+    ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
+    invoke  BitBlt, [hScreenDC], eax, ecx, step.width, step.height, [hMemDC], edx, 0, SRCINVERT
+    retn
+endp
 
 proc WinMain uses ebx
 locals
@@ -19,10 +44,7 @@ locals
     screen.height dd ?
     screen.width  dd ?
     hStep       dd ?
-    X           dd ?
-    Y           dd ?
-    hScreenDC   dd ?
-    hMemDC      dd ?
+
 endl
     invoke  GetSystemMetrics, SM_CXSCREEN
     mov     [screen.width], eax
@@ -33,11 +55,12 @@ endl
     mov     [hStep], eax
     invoke  SetTimer, HWND_DESKTOP, 1, 500, NULL
     invoke  GetDC, HWND_DESKTOP
-    mov     ebx, eax
+    push eax
     invoke  CreateCompatibleDC, eax
     mov     [hMemDC], eax
     invoke  SelectObject, eax, [hStep]
-    invoke  ReleaseDC, HWND_DESKTOP, ebx
+    pop eax
+    invoke  ReleaseDC, HWND_DESKTOP, eax
     jmp     .get_message
 ; ---------------------------------------------------------------------------
 
@@ -68,25 +91,11 @@ endl
     mov     [X], edx
 ; }
     mov     [flag], 1
+; ------------------------------
 @@:
-    sub     [Y], 85
-    invoke  GetDC, HWND_DESKTOP
-    mov     ebx, eax
-    mov     ecx, [Y]
-    test    ecx, 1
-    mov     eax, [X]
-    jnz     .draw_right
-.draw_left:
-    sub     eax, 20
-    xor     edx, edx
-    jmp @f
-.draw_right:
-    add     eax, 20
-    mov     edx, 40
-@@:
-    ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
-    invoke  BitBlt, ebx, eax, ecx, step.width, step.height, [hMemDC], edx, 0, SRCINVERT
-    invoke  ReleaseDC, HWND_DESKTOP, ebx
+    call    DrawErase
+; ------------------------------
+    invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
     mov     edx, [Y]
     test    edx, edx
     jge     .get_message
@@ -98,21 +107,7 @@ endl
     jmp     .erase
 
 .erase_loop:
-    sub     [Y], 85
-    mov     ecx, [Y]
-    test    ecx, 1
-    mov     eax, [X]
-    jnz     .erase_right
-.erase_left:
-    sub     eax, 20
-    xor     edx, edx
-    jmp @f
-.erase_right:
-    add     eax, 20
-    mov     edx, 40
-@@:
-    ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
-    invoke  BitBlt, [hScreenDC], eax, ecx, step.width, step.height, [hMemDC], edx, 0, SRCINVERT
+    call    DrawErase
 .erase:
     mov     ecx, [Y]
     test    ecx, ecx
