@@ -45,6 +45,7 @@ locals
     screen.height dd ?
     screen.width  dd ?
     hStep       dd ?
+    rect        RECT
 endl
     invoke  GetSystemMetrics, SM_CXSCREEN
     mov     [screen.width], eax
@@ -102,20 +103,18 @@ endl
     test    ecx, ecx
     jge     .message_loop
 
-; erase
-    mov     ecx, [screen.height]
-    mov     [Y], ecx
-    invoke  GetDC, HWND_DESKTOP
-    mov     [hScreenDC], eax
-    jmp     .erase
-
-.erase_loop:
-    call    DrawErase
-.erase:
-    mov     ecx, [Y]
-    test    ecx, ecx
-    jge     .erase_loop
-    invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
+; Clear the trace
+    mov     eax, [X]
+    sub     eax, step.width
+    mov     [rect.left], eax
+    add     eax, step.width*2
+    mov     [rect.right], eax
+    xor     eax, eax
+    mov     [rect.top], eax
+    mov     eax, [screen.height]
+    mov     [rect.bottom], eax
+    ; BOOL InvalidateRect(hWnd, lpRect, bErase);
+    invoke  InvalidateRect, HWND_DESKTOP, addr rect, 0
     xor     eax, eax
     mov     [flag], eax
     mov     [skip], skip.initial
