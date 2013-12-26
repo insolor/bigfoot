@@ -16,6 +16,10 @@ section '.data' data readable writeable
     hScreenDC   dd ?
     hMemDC      dd ?
 
+screen:
+    .width      dd ?
+    .height     dd ?
+
 section '.text' code readable executable
 
 proc DrawErase
@@ -42,8 +46,6 @@ endp
 proc WinMain
 locals
     Msg         MSG
-    screen.height dd ?
-    screen.width  dd ?
     hStep       dd ?
     rect        RECT
 endl
