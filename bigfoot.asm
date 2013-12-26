@@ -4,13 +4,17 @@ entry WinMain
 include 'win32ax.inc'
 
 BitmapId = 123
+
 step.width = 40
 step.height = 50
+step.length = 85
+
 skip.initial = 10
 
 section '.data' data readable writeable
     skip        dd skip.initial
     flag        dd 0
+    right       dd 0
     X           dd ?
     Y           dd ?
     hScreenDC   dd ?
@@ -22,12 +26,11 @@ screen:
 
 section '.text' code readable executable
 
-proc DrawErase
-    sub     [Y], 85
+proc MakeStep
     invoke  GetDC, HWND_DESKTOP
     mov     [hScreenDC], eax
-    mov     ecx, [Y]
-    test    ecx, 1
+    mov     ecx, [right]
+    test    ecx, ecx
     mov     eax, [X]
     jnz     .right
 .left:
@@ -39,7 +42,9 @@ proc DrawErase
     mov     edx, step.width
 @@:
     ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
-    invoke  BitBlt, [hScreenDC], eax, ecx, step.width, step.height, [hMemDC], edx, 0, SRCINVERT
+    invoke  BitBlt, [hScreenDC], eax, [Y], step.width, step.height, [hMemDC], edx, 0, SRCINVERT
+    invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
+    not     [right]
     retn
 endp
 
@@ -91,16 +96,16 @@ endl
     invoke  rand
     mov     ecx, [screen.width]
     sub     ecx, (step.width+10)*2
-    cdq ; расширить бит знака eax на edx
-    idiv    ecx ; делим edx:eax на ecx с учетом знака
+    cdq
+    idiv    ecx
     add     edx, step.width+10
     mov     [X], edx
 ; }
     mov     [flag], 1
 
 @@:
-    call    DrawErase
-    invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
+    sub     [Y], step.length
+    call    MakeStep
     mov     ecx, [Y]
     test    ecx, ecx
     jge     .message_loop
