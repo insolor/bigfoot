@@ -6,7 +6,7 @@ include 'win32ax.inc'
 BitmapId = 123
 step.width = 40
 step.height = 50
-skip.initial = 100
+skip.initial = 10
 
 section '.data' data readable writeable
     skip        dd skip.initial
@@ -86,9 +86,9 @@ endl
     mov     [Y], eax
 ; X = rand%(screen.width-100)+50 {
     invoke  rand
-    cdq ; расширить бит знака eax на edx
     mov     ecx, [screen.width]
     sub     ecx, (step.width+10)*2
+    cdq ; расширить бит знака eax на edx
     idiv    ecx ; делим edx:eax на ecx с учетом знака
     add     edx, step.width+10
     mov     [X], edx
@@ -101,6 +101,7 @@ endl
     mov     ecx, [Y]
     test    ecx, ecx
     jge     .message_loop
+
 ; erase
     mov     ecx, [screen.height]
     mov     [Y], ecx
