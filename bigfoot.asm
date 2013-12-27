@@ -5,7 +5,7 @@ include 'win32axp.inc'
 
 BitmapId = 123
 
-step.width = 40
+step.width = 32
 step.height = 50
 step.length = 85
 
