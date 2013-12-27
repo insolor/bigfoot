@@ -14,9 +14,7 @@ skip.initial = 100
 CAPTUREBLT = 0x40000000
 
 section '.data' data readable writeable
-    skip        dd skip.initial
-    flag        dd 0
-    right       dd 0
+    right       dd ?
     X           dd ?
     Y           dd ?
     hStepDC     dd ?
@@ -65,9 +63,11 @@ endp
 
 proc WinMain
 locals
-    Msg         MSG
-    hStep       dd ?
-    rect        RECT
+    Msg     MSG
+    hStep   dd ?
+    rect    RECT
+    flag    dd 0
+    skip    dd skip.initial
 endl
     invoke  GetSystemMetrics, SM_CXSCREEN
     mov     [screen.width], eax
