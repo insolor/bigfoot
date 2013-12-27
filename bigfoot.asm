@@ -91,6 +91,8 @@ endl
         mov     [hMemBitmap], eax
         invoke  SelectObject, [hMemDC], eax
     invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
+    invoke  time, 0
+    invoke  srand, eax
 ; ---------------------------------------------------------------------------
 .message_loop:
     invoke  GetMessage, addr Msg, HWND_DESKTOP, 0, 0
@@ -106,7 +108,6 @@ endl
     dec     [skip]
     jmp     .message_loop
 ; ---------------------------------------------------------------------------
-
 @@:
     mov     ecx, [flag]
     test    ecx, ecx
@@ -170,7 +171,10 @@ include 'api\kernel32.inc'
 include 'api\user32.inc'
 include 'api\gdi32.inc'
 
-import msvcrt, rand, 'rand'
+import msvcrt, \
+    srand, 'srand', \
+    time, 'time', \
+    rand, 'rand'
 
 section '.rsrc' resource data readable
 
