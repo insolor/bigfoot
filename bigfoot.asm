@@ -33,8 +33,7 @@ locals
     current_X   dd ?
     inner_X     dd ?
 endl
-    mov     ecx, [right]
-    test    ecx, ecx
+    test    [right], 1
     mov     eax, [X]
     jnz     .right
 .left:
