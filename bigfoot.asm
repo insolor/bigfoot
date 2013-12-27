@@ -9,7 +9,7 @@ step.width = 40
 step.height = 50
 step.length = 85
 
-skip.initial = 10
+skip.initial = 100
 
 CAPTUREBLT = 0x40000000
 
