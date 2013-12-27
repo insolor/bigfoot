@@ -1,7 +1,7 @@
 format PE GUI 4.0
 entry WinMain
 
-include 'win32ax.inc'
+include 'win32axp.inc'
 
 BitmapId = 123
 
