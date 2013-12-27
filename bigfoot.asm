@@ -48,7 +48,6 @@ endl
     mov     [inner_X], edx
     invoke  GetDC, HWND_DESKTOP
         mov     [hScreenDC], eax
-        ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
         invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
                         [hScreenDC], [current_X], [Y], CAPTUREBLT+MERGECOPY
         invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
@@ -81,9 +80,6 @@ endl
         invoke  CreateCompatibleDC, eax
         mov     [hStepDC], eax
         invoke  SelectObject, eax, [hStep]
-        ; HDC memDC = CreateCompatibleDC ( hDC );
-        ; HBITMAP memBM = CreateCompatibleBitmap ( hDC, nWidth, nHeight );
-        ; SelectObject ( memDC, memBM );
         invoke  CreateCompatibleDC, [hScreenDC]
         mov     [hMemDC], eax
         invoke  CreateCompatibleBitmap, [hScreenDC], step.width, step.height
@@ -142,7 +138,6 @@ endl
     mov     [rect.top], eax
     mov     eax, [screen.height]
     mov     [rect.bottom], eax
-    ; BOOL InvalidateRect(hWnd, lpRect, bErase);
     invoke  InvalidateRect, HWND_DESKTOP, addr rect, 0
     xor     eax, eax
     mov     [flag], eax
