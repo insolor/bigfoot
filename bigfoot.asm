@@ -11,14 +11,18 @@ step.length = 85
 
 skip.initial = 10
 
+CAPTUREBLT = 0x40000000
+
 section '.data' data readable writeable
     skip        dd skip.initial
     flag        dd 0
     right       dd 0
     X           dd ?
     Y           dd ?
-    hScreenDC   dd ?
+    hStepDC     dd ?
     hMemDC      dd ?
+    hMemBitmap  dd ?
+    hScreenDC   dd ?
 
 screen:
     .width      dd ?
@@ -27,6 +31,10 @@ screen:
 section '.text' code readable executable
 
 proc MakeStep
+locals
+    current_X   dd ?
+    inner_X     dd ?
+endl
     invoke  GetDC, HWND_DESKTOP
     mov     [hScreenDC], eax
     mov     ecx, [right]
@@ -41,11 +49,18 @@ proc MakeStep
     add     eax, 20
     mov     edx, step.width
 @@:
+    mov     [current_X], eax
+    mov     [inner_X], edx
     ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
-    invoke  BitBlt, [hScreenDC], eax, [Y], step.width, step.height, [hMemDC], edx, 0, SRCINVERT
+    invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
+                    [hScreenDC], eax, [Y], CAPTUREBLT+MERGECOPY
+    invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
+                    [hStepDC], [inner_X], 0, SRCINVERT
+    invoke  BitBlt, [hScreenDC], [current_X], [Y], step.width, step.height, \
+                    [hMemDC], 0, 0, SRCCOPY
     invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
     not     [right]
-    retn
+    ret
 endp
 
 proc WinMain
@@ -63,12 +78,19 @@ endl
     mov     [hStep], eax
     invoke  SetTimer, HWND_DESKTOP, 1, 500, NULL
     invoke  GetDC, HWND_DESKTOP
-    push    eax
-    invoke  CreateCompatibleDC, eax
-    mov     [hMemDC], eax
-    invoke  SelectObject, eax, [hStep]
-    pop     eax
-    invoke  ReleaseDC, HWND_DESKTOP, eax
+        mov     [hScreenDC], eax
+        invoke  CreateCompatibleDC, eax
+        mov     [hStepDC], eax
+        invoke  SelectObject, eax, [hStep]
+        ; HDC memDC = CreateCompatibleDC ( hDC );
+        ; HBITMAP memBM = CreateCompatibleBitmap ( hDC, nWidth, nHeight );
+        ; SelectObject ( memDC, memBM );
+        invoke  CreateCompatibleDC, [hScreenDC]
+        mov     [hMemDC], eax
+        invoke  CreateCompatibleBitmap, [hScreenDC], step.width, step.height
+        mov     [hMemBitmap], eax
+        invoke  SelectObject, [hMemDC], eax
+    invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
 ; ---------------------------------------------------------------------------
 .message_loop:
     invoke  GetMessage, addr Msg, HWND_DESKTOP, 0, 0
@@ -130,7 +152,9 @@ endl
 .leave:
     invoke  KillTimer, HWND_DESKTOP, 1
     invoke  DeleteDC, [hMemDC]
+    invoke  DeleteDC, [hStepDC]
     invoke  DeleteObject, [hStep]
+    invoke  DeleteObject, [hMemBitmap]
     mov     eax, [Msg.wParam]
     ret
 endp
