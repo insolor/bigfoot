@@ -8,6 +8,7 @@ BitmapId = 123
 step.width = 32
 step.height = 50
 step.length = 85
+step.aside = 28
 
 skip.initial = 100
 
@@ -37,11 +38,11 @@ endl
     mov     eax, [X]
     jnz     .right
 .left:
-    sub     eax, 20
+    sub     eax, step.aside
     xor     edx, edx
     jmp @f
 .right:
-    add     eax, 20
+    add     eax, step.aside
     mov     edx, step.width
 @@:
     mov     [current_X], eax
