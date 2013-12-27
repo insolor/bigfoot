@@ -35,8 +35,6 @@ locals
     current_X   dd ?
     inner_X     dd ?
 endl
-    invoke  GetDC, HWND_DESKTOP
-    mov     [hScreenDC], eax
     mov     ecx, [right]
     test    ecx, ecx
     mov     eax, [X]
@@ -51,13 +49,15 @@ endl
 @@:
     mov     [current_X], eax
     mov     [inner_X], edx
-    ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
-    invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
-                    [hScreenDC], eax, [Y], CAPTUREBLT+MERGECOPY
-    invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
-                    [hStepDC], [inner_X], 0, SRCINVERT
-    invoke  BitBlt, [hScreenDC], [current_X], [Y], step.width, step.height, \
-                    [hMemDC], 0, 0, SRCCOPY
+    invoke  GetDC, HWND_DESKTOP
+        mov     [hScreenDC], eax
+        ; BOOL BitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
+        invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
+                        [hScreenDC], [current_X], [Y], CAPTUREBLT+MERGECOPY
+        invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
+                        [hStepDC], [inner_X], 0, SRCINVERT
+        invoke  BitBlt, [hScreenDC], [current_X], [Y], step.width, step.height, \
+                        [hMemDC], 0, 0, SRCCOPY
     invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
     not     [right]
     ret
