@@ -9,3 +9,5 @@ NeWMaN AleX, ~1999 год
 
 Реверс-инженеринг, доработка и добавление поддержки Windows 7:
 Insolor, 2013 год
+
+![Screenshot](screenshot.png)
