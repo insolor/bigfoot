@@ -16,11 +16,10 @@ CAPTUREBLT = 0x40000000
 
 section '.data' data readable writeable
     is_right dd ?
-    X dd ?
-    Y dd ?
+    x dd ?
+    y dd ?
     hStepDC dd ?
     hMemDC dd ?
-    hMemBitmap dd ?
     hScreenDC dd ?
 
 screen:
@@ -29,12 +28,12 @@ screen:
 
 section '.text' code readable executable
 
-proc MakeStep
+proc DrawFootprint
 locals
     current_x dd ?
     inner_x dd ?
 endl
-    mov eax, [X]
+    mov eax, [x]
     
     .if [is_right] <> 0
         sub eax, step.aside
@@ -49,12 +48,12 @@ endl
     invoke GetDC, HWND_DESKTOP
         mov [hScreenDC], eax
         invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
-                       [hScreenDC], [current_x], [Y], CAPTUREBLT+MERGECOPY
+                       [hScreenDC], [current_x], [y], CAPTUREBLT+MERGECOPY
 
         invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
                        [hStepDC], [inner_x], 0, SRCINVERT
 
-        invoke BitBlt, [hScreenDC], [current_x], [Y], step.width, step.height, \
+        invoke BitBlt, [hScreenDC], [current_x], [y], step.width, step.height, \
                        [hMemDC], 0, 0, SRCCOPY
 
     invoke ReleaseDC, HWND_DESKTOP, [hScreenDC]
@@ -65,6 +64,7 @@ endp
 proc WinMain
 locals
     hStep dd ?
+    hMemBitmap dd ?
 endl
     ; Get screen size
     invoke GetSystemMetrics, SM_CXSCREEN
@@ -80,7 +80,7 @@ endl
     ; Set timer
     invoke SetTimer, HWND_DESKTOP, 1, 500, NULL
     
-    ; Create device contexts for in-memory drawing
+    ; Create device contexts for drawing
     invoke GetDC, HWND_DESKTOP
         mov [hScreenDC], eax
         
@@ -119,7 +119,7 @@ proc message_loop
 locals
     Msg MSG
     rect RECT
-    flag dd 0
+    first_step dd 1
     skip dd skip.initial
 endl
 .loop_start:
@@ -132,54 +132,51 @@ endl
     
     mov eax, [Msg.message]
     cmp eax, WM_TIMER
-    jnz .loop_start
+    jne .loop_start
     
-    mov edx, [skip]
-    test edx, edx
-    jz @f
-    dec [skip]
-    jmp .loop_start
-
+    .if [skip]
+        dec [skip]
+        jmp .loop_start
+    .endif
+    
 ; ---------------------------------------------------------------------------
-@@:
-    mov ecx, [flag]
-    test ecx, ecx
-    jnz @f
-; first step
-    mov eax, [screen.height]
-    mov [Y], eax
-; X = rand%(screen.width-100)+50 {
-    invoke rand
-    mov ecx, [screen.width]
-    sub ecx, (step.width+10)*2
-    cdq
-    idiv ecx
-    add edx, step.width+10
-    mov [X], edx
-; }
-    mov [flag], 1
+    .if [first_step]
+        mov eax, [screen.height]
+        mov [y], eax
+        
+        ; x = rand() % (screen.width-(step.width+10)*2) + step.width+10
+        invoke rand
+        mov ecx, [screen.width]
+        sub ecx, (step.width+10)*2
+        cdq
+        idiv ecx
+        add edx, step.width+10
+        mov [x], edx
+        
+        not [first_step]
+    .endif
 
-@@:
-    sub [Y], step.length
-    call MakeStep
-    mov ecx, [Y]
-    test ecx, ecx
-    jge .loop_start
-
-; Clear the trace
-    mov eax, [X]
-    sub eax, step.width
-    mov [rect.left], eax
-    add eax, step.width*2
-    mov [rect.right], eax
-    xor eax, eax
-    mov [rect.top], eax
-    mov eax, [screen.height]
-    mov [rect.bottom], eax
-    invoke InvalidateRect, HWND_DESKTOP, addr rect, 0
-    xor eax, eax
-    mov [flag], eax
-    mov [skip], skip.initial
+    sub [y], step.length
+    
+    .if [y] < 0
+        ; Clear the trace
+        mov eax, [x]
+        sub eax, step.width
+        mov [rect.left], eax
+        add eax, step.width*2
+        mov [rect.right], eax
+        xor eax, eax
+        mov [rect.top], eax
+        mov eax, [screen.height]
+        mov [rect.bottom], eax
+        invoke InvalidateRect, HWND_DESKTOP, addr rect, 0
+        
+        not [first_step]
+        mov [skip], skip.initial
+    .else
+        call DrawFootprint
+    .endif
+    
     jmp .loop_start
 endp
 
