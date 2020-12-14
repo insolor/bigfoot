@@ -89,9 +89,12 @@ proc message_loop
 locals
     Msg MSG
     rect RECT
-    step_counter dd 0 ; actually it is a flag, 0 means that it's the first step
+    step_counter dd 0 ; actually it is a flag, 0 means that this is the first step
     skip dd skip.initial
 endl
+    xor eax, eax
+    mov [is_right], eax
+    
 .loop_start:
     invoke GetMessage, addr Msg, HWND_DESKTOP, 0, 0
 
@@ -104,7 +107,7 @@ endl
     cmp eax, WM_TIMER
     jne .loop_start
     
-    .if [skip]
+    .if [skip] > 0
         dec [skip]
         jmp .loop_start
     .endif
@@ -161,7 +164,7 @@ locals
 endl
     mov eax, [x]
     
-    .if [is_right]
+    .if [is_right] <> 0
         add eax, step.width
         mov edx, foot.width
     .else
