@@ -15,143 +15,160 @@ skip.initial = 100
 CAPTUREBLT = 0x40000000
 
 section '.data' data readable writeable
-    right       dd ?
-    X           dd ?
-    Y           dd ?
-    hStepDC     dd ?
-    hMemDC      dd ?
-    hMemBitmap  dd ?
-    hScreenDC   dd ?
+    is_right dd ?
+    X dd ?
+    Y dd ?
+    hStepDC dd ?
+    hMemDC dd ?
+    hMemBitmap dd ?
+    hScreenDC dd ?
 
 screen:
-    .width      dd ?
-    .height     dd ?
+    .width dd ?
+    .height dd ?
 
 section '.text' code readable executable
 
 proc MakeStep
 locals
-    current_X   dd ?
-    inner_X     dd ?
+    current_x dd ?
+    inner_x dd ?
 endl
-    test    [right], 1
-    mov     eax, [X]
-    jnz     .right
-.left:
-    sub     eax, step.aside
-    xor     edx, edx
-    jmp @f
-.right:
-    add     eax, step.aside
-    mov     edx, step.width
-@@:
-    mov     [current_X], eax
-    mov     [inner_X], edx
-    invoke  GetDC, HWND_DESKTOP
-        mov     [hScreenDC], eax
-        invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
-                        [hScreenDC], [current_X], [Y], CAPTUREBLT+MERGECOPY
-        invoke  BitBlt, [hMemDC], 0, 0, step.width, step.height, \
-                        [hStepDC], [inner_X], 0, SRCINVERT
-        invoke  BitBlt, [hScreenDC], [current_X], [Y], step.width, step.height, \
-                        [hMemDC], 0, 0, SRCCOPY
-    invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
-    not     [right]
+    mov eax, [X]
+    
+    .if [is_right] <> 0
+        sub eax, step.aside
+        xor edx, edx
+    .else
+        add eax, step.aside
+        mov edx, step.width
+    .endif
+
+    mov [current_x], eax
+    mov [inner_x], edx
+    invoke GetDC, HWND_DESKTOP
+        mov [hScreenDC], eax
+        invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
+                       [hScreenDC], [current_x], [Y], CAPTUREBLT+MERGECOPY
+
+        invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
+                       [hStepDC], [inner_x], 0, SRCINVERT
+
+        invoke BitBlt, [hScreenDC], [current_x], [Y], step.width, step.height, \
+                       [hMemDC], 0, 0, SRCCOPY
+
+    invoke ReleaseDC, HWND_DESKTOP, [hScreenDC]
+    not [is_right]
     ret
 endp
 
 proc WinMain
 locals
-    Msg     MSG
-    hStep   dd ?
-    rect    RECT
-    flag    dd 0
-    skip    dd skip.initial
+    Msg MSG
+    hStep dd ?
+    rect RECT
+    flag dd 0
+    skip dd skip.initial
 endl
-    invoke  GetSystemMetrics, SM_CXSCREEN
-    mov     [screen.width], eax
-    invoke  GetSystemMetrics, SM_CYSCREEN
-    mov     [screen.height], eax
-    invoke  GetModuleHandle, 0
-    invoke  LoadBitmap, eax, BitmapId
-    mov     [hStep], eax
-    invoke  SetTimer, HWND_DESKTOP, 1, 500, NULL
-    invoke  GetDC, HWND_DESKTOP
-        mov     [hScreenDC], eax
-        invoke  CreateCompatibleDC, eax
-        mov     [hStepDC], eax
-        invoke  SelectObject, eax, [hStep]
-        invoke  CreateCompatibleDC, [hScreenDC]
-        mov     [hMemDC], eax
-        invoke  CreateCompatibleBitmap, [hScreenDC], step.width, step.height
-        mov     [hMemBitmap], eax
-        invoke  SelectObject, [hMemDC], eax
-    invoke  ReleaseDC, HWND_DESKTOP, [hScreenDC]
-    invoke  time, 0
-    invoke  srand, eax
+    ; Get screen size
+    invoke GetSystemMetrics, SM_CXSCREEN
+    mov [screen.width], eax
+    invoke GetSystemMetrics, SM_CYSCREEN
+    mov [screen.height], eax
+    
+    ; Load image from resources
+    invoke GetModuleHandle, 0
+    invoke LoadBitmap, eax, BitmapId
+    mov [hStep], eax
+    
+    ; Set timer
+    invoke SetTimer, HWND_DESKTOP, 1, 500, NULL
+    
+    ; Create device contexts for in-memory drawing
+    invoke GetDC, HWND_DESKTOP
+        mov [hScreenDC], eax
+        
+        invoke CreateCompatibleDC, eax
+        mov [hStepDC], eax
+        
+        invoke SelectObject, eax, [hStep]
+        
+        invoke CreateCompatibleDC, [hScreenDC]
+        mov [hMemDC], eax
+        
+        invoke CreateCompatibleBitmap, [hScreenDC], step.width, step.height
+        mov [hMemBitmap], eax
+        
+        invoke SelectObject, [hMemDC], eax
+    invoke ReleaseDC, HWND_DESKTOP, [hScreenDC]
+    
+    ; srand(time(NULL))
+    invoke time, 0
+    invoke srand, eax
+
 ; ---------------------------------------------------------------------------
 .message_loop:
-    invoke  GetMessage, addr Msg, HWND_DESKTOP, 0, 0
-    test    eax, eax
-    jz      .leave
+    invoke GetMessage, addr Msg, HWND_DESKTOP, 0, 0
+    test eax, eax
+    jz .leave
     
-    mov     eax, [Msg.message]
-    cmp     eax, WM_TIMER
-    jnz     .message_loop
-    mov     edx, [skip]
-    test    edx, edx
-    jz      @f
-    dec     [skip]
-    jmp     .message_loop
+    mov eax, [Msg.message]
+    cmp eax, WM_TIMER
+    jnz .message_loop
+    mov edx, [skip]
+    test edx, edx
+    jz @f
+    dec [skip]
+    jmp .message_loop
 ; ---------------------------------------------------------------------------
 @@:
-    mov     ecx, [flag]
-    test    ecx, ecx
-    jnz     @f
+    mov ecx, [flag]
+    test ecx, ecx
+    jnz @f
 ; first step
-    mov     eax, [screen.height]
-    mov     [Y], eax
+    mov eax, [screen.height]
+    mov [Y], eax
 ; X = rand%(screen.width-100)+50 {
-    invoke  rand
-    mov     ecx, [screen.width]
-    sub     ecx, (step.width+10)*2
+    invoke rand
+    mov ecx, [screen.width]
+    sub ecx, (step.width+10)*2
     cdq
-    idiv    ecx
-    add     edx, step.width+10
-    mov     [X], edx
+    idiv ecx
+    add edx, step.width+10
+    mov [X], edx
 ; }
-    mov     [flag], 1
+    mov [flag], 1
 
 @@:
-    sub     [Y], step.length
-    call    MakeStep
-    mov     ecx, [Y]
-    test    ecx, ecx
-    jge     .message_loop
+    sub [Y], step.length
+    call MakeStep
+    mov ecx, [Y]
+    test ecx, ecx
+    jge .message_loop
 
 ; Clear the trace
-    mov     eax, [X]
-    sub     eax, step.width
-    mov     [rect.left], eax
-    add     eax, step.width*2
-    mov     [rect.right], eax
-    xor     eax, eax
-    mov     [rect.top], eax
-    mov     eax, [screen.height]
-    mov     [rect.bottom], eax
-    invoke  InvalidateRect, HWND_DESKTOP, addr rect, 0
-    xor     eax, eax
-    mov     [flag], eax
-    mov     [skip], skip.initial
-    jmp     .message_loop
+    mov eax, [X]
+    sub eax, step.width
+    mov [rect.left], eax
+    add eax, step.width*2
+    mov [rect.right], eax
+    xor eax, eax
+    mov [rect.top], eax
+    mov eax, [screen.height]
+    mov [rect.bottom], eax
+    invoke InvalidateRect, HWND_DESKTOP, addr rect, 0
+    xor eax, eax
+    mov [flag], eax
+    mov [skip], skip.initial
+    jmp .message_loop
 
 .leave:
-    invoke  KillTimer, HWND_DESKTOP, 1
-    invoke  DeleteDC, [hMemDC]
-    invoke  DeleteDC, [hStepDC]
-    invoke  DeleteObject, [hStep]
-    invoke  DeleteObject, [hMemBitmap]
-    mov     eax, [Msg.wParam]
+    invoke KillTimer, HWND_DESKTOP, 1
+    invoke DeleteDC, [hMemDC]
+    invoke DeleteDC, [hStepDC]
+    invoke DeleteObject, [hStep]
+    invoke DeleteObject, [hMemBitmap]
+    mov eax, [Msg.wParam]
     ret
 endp
 
