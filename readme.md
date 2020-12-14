@@ -1,5 +1,7 @@
 ﻿# Big Foot Screenmate
 
+[![Build](https://github.com/insolor/bigfoot/workflows/Build/badge.svg)](https://github.com/insolor/bigfoot/actions?query=workflow%3ABuild)
+
 > From time to time yeti the Big Foot will cross your desktop.
 > The few have seen it, and you won't. It will leave only the trace...
 
