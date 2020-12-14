@@ -24,9 +24,9 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      #- uses: actions/setup-fasm
-      - name: setup fasm
-        run: sudo apt update && apt install fasm
+      - uses: actions/setup-fasm@v.1.0.0-beta.10
+      #- name: setup fasm
+      #  run: sudo apt update && apt install fasm
 
       # Runs a single command using the runners shell
       - name: make build
