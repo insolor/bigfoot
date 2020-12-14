@@ -10,7 +10,7 @@ step.height = 50
 step.length = 85
 step.aside = 28
 
-skip.initial = 100
+skip.initial = 100 ; controls delay before the trace occurrence
 
 CAPTUREBLT = 0x40000000
 
@@ -64,11 +64,7 @@ endp
 
 proc WinMain
 locals
-    Msg MSG
     hStep dd ?
-    rect RECT
-    flag dd 0
-    skip dd skip.initial
 endl
     ; Get screen size
     invoke GetSystemMetrics, SM_CXSCREEN
@@ -105,21 +101,45 @@ endl
     ; srand(time(NULL))
     invoke time, 0
     invoke srand, eax
+    
+    call message_loop
+    
+    push eax
+    invoke KillTimer, HWND_DESKTOP, 1
+    invoke DeleteDC, [hMemDC]
+    invoke DeleteDC, [hStepDC]
+    invoke DeleteObject, [hStep]
+    invoke DeleteObject, [hMemBitmap]
+    pop eax
+    ret
+endp
 
 ; ---------------------------------------------------------------------------
-.message_loop:
+proc message_loop
+locals
+    Msg MSG
+    rect RECT
+    flag dd 0
+    skip dd skip.initial
+endl
+.loop_start:
     invoke GetMessage, addr Msg, HWND_DESKTOP, 0, 0
-    test eax, eax
-    jz .leave
+
+    .if eax = 0
+        mov eax, [Msg.wParam]
+        ret
+    .endif
     
     mov eax, [Msg.message]
     cmp eax, WM_TIMER
-    jnz .message_loop
+    jnz .loop_start
+    
     mov edx, [skip]
     test edx, edx
     jz @f
     dec [skip]
-    jmp .message_loop
+    jmp .loop_start
+
 ; ---------------------------------------------------------------------------
 @@:
     mov ecx, [flag]
@@ -144,7 +164,7 @@ endl
     call MakeStep
     mov ecx, [Y]
     test ecx, ecx
-    jge .message_loop
+    jge .loop_start
 
 ; Clear the trace
     mov eax, [X]
@@ -160,36 +180,28 @@ endl
     xor eax, eax
     mov [flag], eax
     mov [skip], skip.initial
-    jmp .message_loop
-
-.leave:
-    invoke KillTimer, HWND_DESKTOP, 1
-    invoke DeleteDC, [hMemDC]
-    invoke DeleteDC, [hStepDC]
-    invoke DeleteObject, [hStep]
-    invoke DeleteObject, [hMemBitmap]
-    mov eax, [Msg.wParam]
-    ret
+    jmp .loop_start
 endp
 
 section '.idata' import data readable writeable
 
-library kernel32,'KERNEL32.DLL',\
-  user32,'USER32.DLL',\
-  gdi32,'GDI32.DLL',\
-  msvcrt,'MSVCRT.DLL'
+    library \
+        kernel32, 'KERNEL32.DLL',\
+        user32, 'USER32.DLL',\
+        gdi32, 'GDI32.DLL',\
+        msvcrt, 'MSVCRT.DLL'
 
-include 'include/api/kernel32.inc'
-include 'include/api/user32.inc'
-include 'include/api/gdi32.inc'
+    include 'include/api/kernel32.inc'
+    include 'include/api/user32.inc'
+    include 'include/api/gdi32.inc'
 
-import msvcrt, \
-    srand, 'srand', \
-    time, 'time', \
-    rand, 'rand'
+    import msvcrt, \
+        srand, 'srand', \
+        time, 'time', \
+        rand, 'rand'
 
 section '.rsrc' resource data readable
 
-directory RT_BITMAP, bitmaps
-resource bitmaps, BitmapId, LANG_NEUTRAL, step
-bitmap step, 'bigfoot.bmp'
+    directory RT_BITMAP, bitmaps
+    resource bitmaps, BitmapId, LANG_NEUTRAL, step
+    bitmap step, 'bigfoot.bmp'
