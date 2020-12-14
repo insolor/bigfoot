@@ -15,6 +15,7 @@ skip.initial = 100 ; controls delay before the trace occurrence
 
 CAPTUREBLT = 0x40000000
 
+
 section '.data' data readable writeable
     is_right dd ?
     x dd ?
@@ -26,6 +27,7 @@ section '.data' data readable writeable
 screen:
     .width dd ?
     .height dd ?
+
 
 section '.text' code readable executable
 
@@ -82,7 +84,7 @@ endl
     ret
 endp
 
-; ---------------------------------------------------------------------------
+
 proc message_loop
 locals
     Msg MSG
@@ -107,7 +109,6 @@ endl
         jmp .loop_start
     .endif
     
-; ---------------------------------------------------------------------------
     .if [step_counter] = 0
         mov eax, [screen.height]
         mov [y], eax
@@ -152,6 +153,7 @@ endl
     jmp .loop_start
 endp
 
+
 proc DrawFootprint
 locals
     current_x dd ? ; x coordinate of the current footprint on the screen
@@ -183,6 +185,7 @@ endl
     not [is_right]
     ret
 endp
+
 
 section '.idata' import data readable writeable
 
