@@ -87,7 +87,7 @@ proc message_loop
 locals
     Msg MSG
     rect RECT
-    first_step dd 1
+    step_counter dd 0 ; actually it is a flag, 0 means that it's the first step
     skip dd skip.initial
 endl
 .loop_start:
@@ -108,7 +108,7 @@ endl
     .endif
     
 ; ---------------------------------------------------------------------------
-    .if [first_step]
+    .if [step_counter] = 0
         mov eax, [screen.height]
         mov [y], eax
         
@@ -120,7 +120,7 @@ endl
         idiv ecx
         mov [x], edx
         
-        not [first_step]
+        inc [step_counter] ; step_counter is used
     .endif
 
     sub [y], step.length
@@ -138,7 +138,9 @@ endl
         mov [rect.bottom], eax
         invoke InvalidateRect, HWND_DESKTOP, addr rect, 0
         
-        not [first_step]
+        xor eax, eax
+        mov [step_counter], eax
+        
         mov [skip], skip.initial
     .else
         call DrawFootprint
