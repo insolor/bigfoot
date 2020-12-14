@@ -28,39 +28,6 @@ screen:
 
 section '.text' code readable executable
 
-proc DrawFootprint
-locals
-    current_x dd ?
-    inner_x dd ?
-endl
-    mov eax, [x]
-    
-    .if [is_right] <> 0
-        sub eax, step.aside
-        xor edx, edx
-    .else
-        add eax, step.aside
-        mov edx, step.width
-    .endif
-
-    mov [current_x], eax
-    mov [inner_x], edx
-    invoke GetDC, HWND_DESKTOP
-        mov [hScreenDC], eax
-        invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
-                       [hScreenDC], [current_x], [y], CAPTUREBLT+MERGECOPY
-
-        invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
-                       [hStepDC], [inner_x], 0, SRCINVERT
-
-        invoke BitBlt, [hScreenDC], [current_x], [y], step.width, step.height, \
-                       [hMemDC], 0, 0, SRCCOPY
-
-    invoke ReleaseDC, HWND_DESKTOP, [hScreenDC]
-    not [is_right]
-    ret
-endp
-
 proc WinMain
 locals
     hStep dd ?
@@ -178,6 +145,39 @@ endl
     .endif
     
     jmp .loop_start
+endp
+
+proc DrawFootprint
+locals
+    current_x dd ?
+    inner_x dd ?
+endl
+    mov eax, [x]
+    
+    .if [is_right] <> 0
+        sub eax, step.aside
+        xor edx, edx
+    .else
+        add eax, step.aside
+        mov edx, step.width
+    .endif
+
+    mov [current_x], eax
+    mov [inner_x], edx
+    invoke GetDC, HWND_DESKTOP
+        mov [hScreenDC], eax
+        invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
+                       [hScreenDC], [current_x], [y], CAPTUREBLT+MERGECOPY
+
+        invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
+                       [hStepDC], [inner_x], 0, SRCINVERT
+
+        invoke BitBlt, [hScreenDC], [current_x], [y], step.width, step.height, \
+                       [hMemDC], 0, 0, SRCCOPY
+
+    invoke ReleaseDC, HWND_DESKTOP, [hScreenDC]
+    not [is_right]
+    ret
 endp
 
 section '.idata' import data readable writeable
