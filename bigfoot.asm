@@ -5,10 +5,11 @@ include 'include/win32axp.inc'
 
 BitmapId = 123
 
-step.width = 32
-step.height = 50
+foot.width = 32
+foot.length = 50
+
+step.width = 56
 step.length = 85
-step.aside = 28
 
 skip.initial = 100 ; controls delay before the trace occurrence
 
@@ -59,7 +60,7 @@ endl
         invoke CreateCompatibleDC, [hScreenDC]
         mov [hMemDC], eax
         
-        invoke CreateCompatibleBitmap, [hScreenDC], step.width, step.height
+        invoke CreateCompatibleBitmap, [hScreenDC], foot.width, foot.length
         mov [hMemBitmap], eax
         
         invoke SelectObject, [hMemDC], eax
@@ -111,13 +112,12 @@ endl
         mov eax, [screen.height]
         mov [y], eax
         
-        ; x = rand() % (screen.width-(step.width+10)*2) + step.width+10
+        ; x = rand() % (screen.width-(foot.width+step.width))
         invoke rand
         mov ecx, [screen.width]
-        sub ecx, (step.width+10)*2
+        sub ecx, foot.width+step.width
         cdq
         idiv ecx
-        add edx, step.width+10
         mov [x], edx
         
         not [first_step]
@@ -128,9 +128,9 @@ endl
     .if [y] < 0
         ; Clear the trace
         mov eax, [x]
-        sub eax, step.width
+        sub eax, foot.width
         mov [rect.left], eax
-        add eax, step.width*2
+        add eax, foot.width + step.width
         mov [rect.right], eax
         xor eax, eax
         mov [rect.top], eax
@@ -149,30 +149,29 @@ endp
 
 proc DrawFootprint
 locals
-    current_x dd ?
-    inner_x dd ?
+    current_x dd ? ; x coordinate of the current footprint on the screen
+    picture_x dd ? ; x coordinate of the corresponding footprint image (left or right) on the image from resources
 endl
     mov eax, [x]
     
-    .if [is_right] <> 0
-        sub eax, step.aside
-        xor edx, edx
+    .if [is_right]
+        add eax, step.width
+        mov edx, foot.width
     .else
-        add eax, step.aside
-        mov edx, step.width
+        xor edx, edx
     .endif
 
     mov [current_x], eax
-    mov [inner_x], edx
+    mov [picture_x], edx
     invoke GetDC, HWND_DESKTOP
         mov [hScreenDC], eax
-        invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
+        invoke BitBlt, [hMemDC], 0, 0, foot.width, foot.length, \
                        [hScreenDC], [current_x], [y], CAPTUREBLT+MERGECOPY
 
-        invoke BitBlt, [hMemDC], 0, 0, step.width, step.height, \
-                       [hStepDC], [inner_x], 0, SRCINVERT
+        invoke BitBlt, [hMemDC], 0, 0, foot.width, foot.length, \
+                       [hStepDC], [picture_x], 0, SRCINVERT
 
-        invoke BitBlt, [hScreenDC], [current_x], [y], step.width, step.height, \
+        invoke BitBlt, [hScreenDC], [current_x], [y], foot.width, foot.length, \
                        [hMemDC], 0, 0, SRCCOPY
 
     invoke ReleaseDC, HWND_DESKTOP, [hScreenDC]
