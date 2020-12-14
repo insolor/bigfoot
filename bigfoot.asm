@@ -1,7 +1,7 @@
 format PE GUI 4.0
 entry WinMain
 
-include 'win32axp.inc'
+include 'include/win32axp.inc'
 
 BitmapId = 123
 
@@ -162,9 +162,9 @@ library kernel32,'KERNEL32.DLL',\
   gdi32,'GDI32.DLL',\
   msvcrt,'MSVCRT.DLL'
 
-include 'api\kernel32.inc'
-include 'api\user32.inc'
-include 'api\gdi32.inc'
+include 'include/api/kernel32.inc'
+include 'include/api/user32.inc'
+include 'include/api/gdi32.inc'
 
 import msvcrt, \
     srand, 'srand', \
