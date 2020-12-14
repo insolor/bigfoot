@@ -120,31 +120,34 @@ endl
         idiv ecx
         mov [x], edx
         
-        inc [step_counter] ; step_counter is used
+        inc [step_counter]
+        ; step_counter is used only to know if it is the first step,
+        ; so it's not necessary increment it every step
     .endif
 
     sub [y], step.length
     
-    .if [y] < 0
-        ; Clear the trace
-        mov eax, [x]
-        sub eax, foot.width
-        mov [rect.left], eax
-        add eax, foot.width + step.width
-        mov [rect.right], eax
-        xor eax, eax
-        mov [rect.top], eax
-        mov eax, [screen.height]
-        mov [rect.bottom], eax
-        invoke InvalidateRect, HWND_DESKTOP, addr rect, 0
-        
-        xor eax, eax
-        mov [step_counter], eax
-        
-        mov [skip], skip.initial
-    .else
+    .if [y] >= 0
         call DrawFootprint
+        jmp .loop_start
     .endif
+    
+    ; Clear the trace
+    mov eax, [x]
+    sub eax, foot.width
+    mov [rect.left], eax
+    add eax, foot.width + step.width
+    mov [rect.right], eax
+    xor eax, eax
+    mov [rect.top], eax
+    mov eax, [screen.height]
+    mov [rect.bottom], eax
+    invoke InvalidateRect, HWND_DESKTOP, addr rect, 0
+    
+    xor eax, eax
+    mov [step_counter], eax
+    
+    mov [skip], skip.initial
     
     jmp .loop_start
 endp
