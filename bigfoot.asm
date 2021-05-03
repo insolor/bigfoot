@@ -76,8 +76,7 @@ proc WinMain
     init_device_contexts
 
     ; srand(time(NULL))
-    invoke time, 0
-    invoke srand, eax
+    invoke srand, <invoke time, 0>
     
     call message_loop
     
