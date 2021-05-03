@@ -15,6 +15,9 @@ skip.initial = 100 ; controls delay before the trace occurrence
 
 CAPTUREBLT = 0x40000000
 
+timer.id = 1
+timer.delay = 500
+
 
 section '.data' data readable writeable
     is_right dd ?
@@ -48,7 +51,7 @@ endl
     mov [hStep], eax
     
     ; Set timer
-    invoke SetTimer, HWND_DESKTOP, 1, 500, NULL
+    invoke SetTimer, HWND_DESKTOP, timer.id, timer.delay, NULL
     
     ; Create device contexts for drawing
     invoke GetDC, HWND_DESKTOP
@@ -75,7 +78,7 @@ endl
     call message_loop
     
     push eax
-    invoke KillTimer, HWND_DESKTOP, 1
+    invoke KillTimer, HWND_DESKTOP, timer.id
     invoke DeleteDC, [hMemDC]
     invoke DeleteDC, [hStepDC]
     invoke DeleteObject, [hStep]
