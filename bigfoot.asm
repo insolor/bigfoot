@@ -24,9 +24,9 @@ section '.text' code readable executable
 
 macro get_screen_size width, height {
     invoke GetSystemMetrics, SM_CXSCREEN
-    mov [width], eax
+    mov width, eax
     invoke GetSystemMetrics, SM_CYSCREEN
-    mov [height], eax
+    mov height, eax
 }
 
 
@@ -51,19 +51,20 @@ macro init_device_contexts {
 }
 
 
-macro cleanup {
-    push eax
-    invoke KillTimer, HWND_DESKTOP, timer.id
-    invoke DeleteDC, [hMemDC]
-    invoke DeleteDC, [hStepDC]
-    invoke DeleteObject, [hStep]
-    invoke DeleteObject, [hMemBitmap]
-    pop eax
+macro delete_dcs [hdc] {
+    forward
+        invoke DeleteDC, hdc
+}
+
+
+macro delete_objects [object] {
+    forward
+        invoke DeleteObject, object
 }
 
 
 proc WinMain
-    get_screen_size screen.width, screen.height
+    get_screen_size [screen.width], [screen.height]
     
     ; Load image from resources
     invoke GetModuleHandle, 0
@@ -80,7 +81,11 @@ proc WinMain
     
     call message_loop
     
-    cleanup
+    push eax
+    invoke KillTimer, HWND_DESKTOP, timer.id
+    delete_dcs [hMemDC], [hStepDC]
+    delete_objects [hStep], [hMemBitmap]
+    pop eax
 
     ret
 endp
