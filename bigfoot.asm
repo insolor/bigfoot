@@ -4,6 +4,7 @@ entry WinMain
 include 'include/win32axp.inc'
 
 include 'constants.asm'
+include 'macros.asm'
 
 section '.data' data readable writeable
     is_right dd ?
@@ -21,14 +22,6 @@ screen:
 
 
 section '.text' code readable executable
-
-macro get_screen_size width, height {
-    invoke GetSystemMetrics, SM_CXSCREEN
-    mov width, eax
-    invoke GetSystemMetrics, SM_CYSCREEN
-    mov height, eax
-}
-
 
 macro init_device_contexts {
     ; Create device contexts for drawing
@@ -48,18 +41,6 @@ macro init_device_contexts {
         
         invoke SelectObject, [hMemDC], eax
     invoke ReleaseDC, HWND_DESKTOP, [hScreenDC]
-}
-
-
-macro delete_dcs [hdc] {
-    forward
-        invoke DeleteDC, hdc
-}
-
-
-macro delete_objects [object] {
-    forward
-        invoke DeleteObject, object
 }
 
 
