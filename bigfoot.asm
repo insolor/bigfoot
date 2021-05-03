@@ -3,21 +3,7 @@ entry WinMain
 
 include 'include/win32axp.inc'
 
-BitmapId = 123
-
-foot.width = 32
-foot.length = 50
-
-step.width = 56
-step.length = 85
-
-skip.initial = 100 ; controls delay before the trace occurrence
-
-CAPTUREBLT = 0x40000000
-
-timer.id = 1
-timer.delay = 500
-
+include 'constants.asm'
 
 section '.data' data readable writeable
     is_right dd ?
@@ -26,6 +12,8 @@ section '.data' data readable writeable
     hStepDC dd ?
     hMemDC dd ?
     hScreenDC dd ?
+    hMemBitmap dd ?
+    hStep dd ?
 
 screen:
     .width dd ?
@@ -34,25 +22,15 @@ screen:
 
 section '.text' code readable executable
 
-proc WinMain
-locals
-    hStep dd ?
-    hMemBitmap dd ?
-endl
-    ; Get screen size
+macro get_screen_size width, height {
     invoke GetSystemMetrics, SM_CXSCREEN
-    mov [screen.width], eax
+    mov [width], eax
     invoke GetSystemMetrics, SM_CYSCREEN
-    mov [screen.height], eax
-    
-    ; Load image from resources
-    invoke GetModuleHandle, 0
-    invoke LoadBitmap, eax, BitmapId
-    mov [hStep], eax
-    
-    ; Set timer
-    invoke SetTimer, HWND_DESKTOP, timer.id, timer.delay, NULL
-    
+    mov [height], eax
+}
+
+
+macro init_device_contexts {
     ; Create device contexts for drawing
     invoke GetDC, HWND_DESKTOP
         mov [hScreenDC], eax
@@ -70,13 +48,10 @@ endl
         
         invoke SelectObject, [hMemDC], eax
     invoke ReleaseDC, HWND_DESKTOP, [hScreenDC]
-    
-    ; srand(time(NULL))
-    invoke time, 0
-    invoke srand, eax
-    
-    call message_loop
-    
+}
+
+
+macro cleanup {
     push eax
     invoke KillTimer, HWND_DESKTOP, timer.id
     invoke DeleteDC, [hMemDC]
@@ -84,6 +59,30 @@ endl
     invoke DeleteObject, [hStep]
     invoke DeleteObject, [hMemBitmap]
     pop eax
+}
+
+
+proc WinMain
+    get_screen_size screen.width, screen.height
+    
+    ; Load image from resources
+    invoke GetModuleHandle, 0
+    invoke LoadBitmap, eax, BitmapId
+    mov [hStep], eax
+    
+    ; Set timer
+    invoke SetTimer, HWND_DESKTOP, timer.id, timer.delay, NULL
+    
+    init_device_contexts
+
+    ; srand(time(NULL))
+    invoke time, 0
+    invoke srand, eax
+    
+    call message_loop
+    
+    cleanup
+
     ret
 endp
 
